@@ -112,4 +112,4 @@ The script will create tickets using only the description and acceptance criteri
 - **API authentication errors**: Verify `jira_token` environment variable is set correctly
 - **Import errors**: Run `pip install openpyxl requests ollama`
 
-For detailed Ollama setup, see `documentation/README-generator_setup.txt`
+For detailed Ollama setup, see `documentation/README-generator_setup.md`
