@@ -42,6 +42,8 @@ for ticket in tickets[1:]:
                 "summary": ticket["summary"],
                 "customfield_15377": {"value": "Review Workspace"},
                 "parent": {"key": epic_key},
+                "description": ticket["description"],
+                "customfield_11930": ticket["acceptance_criteria"],
             }
         }
     )
