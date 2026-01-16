@@ -153,4 +153,4 @@ If you see a model response, you're all set.
 
 ## 10. You're Ready!
 
-Proceed to [README-usage.txt](README-usage.txt) to run the script and generate tickets.
+Proceed to [README.txt](README.txt) to run the script and generate tickets.
