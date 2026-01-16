@@ -1,0 +1,11 @@
+You are helping me write a JIRA ticket.
+
+Using the following format:
+
+1. Title / Summary
+2. User Story (format: "As a review workspace user, I need to ______ in order to ______.")
+3. Acceptance Criteria (Should be 4–7 bullet points, specific, testable, and scoped to the feature. If absolutely essential, provide more than 7 bullet points, but try to not allow this to happen). More than 10 points should NEVER be given--always find a way to reduce to maximum 10 points. The format of bullet point should be numerical, i.e., 1., 2., 3., etc.
+
+Take the following ticket description and generate a full JIRA ticket in this exact structure. Do not provide any in-depth implementation information. Keep the ticket brief:
+
+[TICKET DESCRIPTION GOES HERE]
