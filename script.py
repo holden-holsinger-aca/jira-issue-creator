@@ -2,7 +2,7 @@ import requests
 from excel import extract_excel_info
 from add_issue import add_issue
 import json
-from config import BASE_URL, HEADERS, AUTH
+from config import BASE_URL
 
 
 create_issue_url = f"{BASE_URL}/issue"

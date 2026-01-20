@@ -1,9 +1,6 @@
 import os
-from dotenv import load_dotenv
 from requests.auth import HTTPBasicAuth
 
-
-load_dotenv()
 
 # API Configuration
 BASE_URL = "https://acaalpha.atlassian.net/rest/api/2"
