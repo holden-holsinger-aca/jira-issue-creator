@@ -5,7 +5,13 @@ from typing import List, Dict, Any
 def extract_excel_info() -> List[Dict[str, Any]]:
     wb = load_workbook("tickets_to_create.xlsx", data_only=True)
 
-    ws = wb.active
+    try:
+        ws = wb["Sheet1"]
+    except KeyError as e:
+        available = ", ".join(wb.sheetnames)
+        raise ValueError(
+            f"Worksheet 'Sheet1' not found in tickets_to_create.xlsx. Available sheets: {available}"
+        ) from e
 
     tickets_to_add = []
     for row in ws.iter_rows(min_row=2, values_only=True):
