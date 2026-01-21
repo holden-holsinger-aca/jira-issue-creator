@@ -24,13 +24,17 @@ A Python script to bulk create Jira issues from Excel spreadsheets, including su
    - Column B: project (e.g., GRW)
    - Column C: summary (issue title)
 
-2. **Important Excel Structure Requirements:**
+2. **Workbook configuration (required):**
+   - In the spreadsheet's `config` sheet, set cell `A2` to the **Business Unit (BU) name**.
+   - Ensure Excel **AutoSave is OFF** for this workbook. Before running the script, **save and close Excel completely** so `script.py` reads the latest on-disk file.
+
+3. **Important Excel Structure Requirements:**
    - Each Excel file should contain **exactly ONE epic** (issuetype 5) - this will be the parent
    - All other rows should be stories (issuetype 6) that will be linked to the epic
    - The Excel functionality currently supports **one business unit's onboarding at a time**
    - Ensure the epic is in the first row (Row 2, after headers) for proper linking
 
-3. Run the script:
+4. Run the script:
    ```bash
    python script.py
    ```
