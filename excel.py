@@ -14,10 +14,14 @@ def extract_excel_info() -> List[Dict[str, Any]]:
         ticket["project"] = row[1]
         ticket["summary"] = row[2]
         ticket["description"] = row[3]
-        ticket["acceptance_criteria"] = row[4]
+        ticket["epic_id"] = row[4]
         tickets_to_add.append(ticket)
 
     return tickets_to_add
+
+
+if __name__ == "__main__":
+    extract_excel_info()
 
 
 # need to create the parent epic or find the existing
