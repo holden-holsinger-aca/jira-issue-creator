@@ -19,3 +19,16 @@ ENDPOINTS = {
     "issues": f"{BASE_URL}/issues",
     "myself": f"{BASE_URL}/myself",
 }
+
+
+# SonarQube API Configuration
+SONAR_BASE_URL = "https://sonar.acaglobal.dev"
+SONAR_TOKEN = (
+    os.getenv("sonarqube_token")
+    or os.getenv("SONAR_TOKEN")
+    or os.getenv("SONARQUBE_TOKEN")
+)
+
+# SonarQube supports token-based auth via HTTP Basic (token as username, blank password)
+SONAR_AUTH = HTTPBasicAuth(SONAR_TOKEN, "") if SONAR_TOKEN else None
+SONAR_HEADERS = {"Accept": "application/json"}
