@@ -41,13 +41,54 @@ A Python script to bulk create Jira issues from Excel spreadsheets, including su
    python script.py
    ```
 
+## SonarQube Ticket Creation
+
+The tool supports automatic creation of Jira tickets from SonarQube issues. This feature allows you to track code quality issues identified by SonarQube as Jira tickets.
+
+### How It Works
+
+1. **Issue Retrieval**: The `get_sonar_issue.py` script fetches SonarQube issue details via the SonarQube API, extracting:
+   - Rule name
+   - Severity level
+   - File location and line number
+   - Issue message/description
+
+2. **Ticket Creation**: The `create_issue_from_sonar()` function in `script.py`:
+   - Checks if a Jira ticket already exists for the SonarQube issue using `sonar_tracking.py`
+   - If not found, creates a new Jira ticket (issuetype 3 - Task) in the GRW project
+   - Includes the SonarQube issue details and a link back to the SonarQube entry
+   - Assigns the ticket to the current sprint
+
+3. **Tracking**: The `sonar_tracking.py` module maintains a CSV file (`sonar_tickets_created.csv`) that tracks:
+   - SonarQube issue key
+   - Associated Jira ticket key
+   - Creation date
+
+### Usage
+
+```python
+from script import create_issue_from_sonar
+
+# Create a Jira ticket for a SonarQube issue
+If the URL for the SonarQube ticket is "https://sonar.acaglobal.dev/project/issues?issueStatuses=OPEN%2CCONFIRMED&open=683986a2-08ce-4814-9db6-2e8b290e422f&id=drl-api",
+
+You would grab the id from the url and put it as below
+create_issue_from_sonar("683986a2-08ce-4814-9db6-2e8b290e422f")
+```
+
+The system prevents duplicate ticket creation by checking the tracking CSV file before creating new tickets.
+
 ## Files
 
-- `script.py` - Main entry point
+- `script.py` - Main entry point (contains `create_issue_from_sonar()` function)
 - `add_issue.py` - Jira API request handler
 - `excel.py` - Excel file parser
 - `config.py` - Configuration and credentials
+- `get_sonar_issue.py` - SonarQube API interface for fetching issue details
+- `sonar_tracking.py` - Tracks created tickets to prevent duplicates
+- `get_vector_service_user_stories.py` - Retrieves Jira tickets with Vector Service label
 - `tickets_to_create.xlsx` - Input data file
+- `sonar_tickets_created.csv` - Tracking file for SonarQube ticket creation
 
 ## Requirements
 

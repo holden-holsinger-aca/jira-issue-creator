@@ -1,4 +1,3 @@
-import requests
 from excel import extract_excel_info
 from add_issue import add_issue
 import json
@@ -68,9 +67,11 @@ def create_issue_from_sonar(issue_id: str):
     # Check if ticket already exists
     if is_ticket_created(issue_id):
         existing_ticket = get_existing_ticket(issue_id)
-        print(f"Ticket already exists for SonarQube issue {issue_id}: {existing_ticket}")
+        print(
+            f"Ticket already exists for SonarQube issue {issue_id}: {existing_ticket}"
+        )
         return existing_ticket
-    
+
     sonar_issue = get_sonar_issue(issue_id)
     issue_url = f"https://sonar.acaglobal.dev/project/issues?id=rw-api&open={issue_id}"
 
@@ -93,11 +94,11 @@ def create_issue_from_sonar(issue_id: str):
 
     result = add_issue(payload=sonar_jira_ticket_payload, full_url=create_issue_url)
     jira_key = result.get("key")
-    
+
     if jira_key:
         record_created_ticket(issue_id, jira_key)
         print(f"Created Jira ticket {jira_key} for SonarQube issue {issue_id}")
-    
+
     return jira_key
 
 
@@ -105,5 +106,5 @@ if CREATE_FROM_EXCEL:
     create_issues_from_excel()
 
 else:
-    sonar_issue_key = "AYubfL6kkWggubew-Kpv"
+    sonar_issue_key = "9cba2205-c00a-41fb-9d5d-8b29ed016566"
     create_issue_from_sonar(sonar_issue_key)
