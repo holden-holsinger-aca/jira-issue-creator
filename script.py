@@ -4,7 +4,7 @@ import json
 from config import BASE_URL
 from get_sonar_issue import get_sonar_issue
 from sonar_tracking import is_ticket_created, get_existing_ticket, record_created_ticket
-
+from get_current_sprint import get_current_sprint
 
 CREATE_FROM_EXCEL = False
 
@@ -75,6 +75,8 @@ def create_issue_from_sonar(issue_id: str):
     sonar_issue = get_sonar_issue(issue_id)
     issue_url = f"https://sonar.acaglobal.dev/project/issues?id=rw-api&open={issue_id}"
 
+    current_sprint = get_current_sprint()
+
     sonar_jira_ticket_payload = json.dumps(
         {
             "fields": {
@@ -87,7 +89,8 @@ def create_issue_from_sonar(issue_id: str):
                     f"Per SonarQube rule {sonar_issue['rule']}, SonarQube indicates {sonar_issue['issue']}. The url to the SonarQube entry is {issue_url}"
                 ),
                 # id of current sprint
-                "customfield_10430": 12944,
+                "customfield_10430": current_sprint,
+                "labels": ["roadmap"],
             }
         }
     )
@@ -106,5 +109,5 @@ if CREATE_FROM_EXCEL:
     create_issues_from_excel()
 
 else:
-    sonar_issue_key = "9cba2205-c00a-41fb-9d5d-8b29ed016566"
+    sonar_issue_key = "46d22731-0155-4351-97c8-06467056d6ac"
     create_issue_from_sonar(sonar_issue_key)
