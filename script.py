@@ -109,5 +109,5 @@ if CREATE_FROM_EXCEL:
     create_issues_from_excel()
 
 else:
-    sonar_issue_key = "AYubetVdkWggubew9-IR"
+    sonar_issue_key = "AYubetVTkWggubew9-IF"
     create_issue_from_sonar(sonar_issue_key)
