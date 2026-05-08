@@ -1,6 +1,7 @@
 from excel import extract_excel_info
 from add_issue import add_issue
 import json
+import argparse
 from config import BASE_URL
 from get_sonar_issue import get_sonar_issue
 from sonar_tracking import is_ticket_created, get_existing_ticket, record_created_ticket
@@ -105,9 +106,35 @@ def create_issue_from_sonar(issue_id: str):
     return jira_key
 
 
-if CREATE_FROM_EXCEL:
-    create_issues_from_excel()
+# if CREATE_FROM_EXCEL:
+#     create_issues_from_excel()
 
-else:
-    sonar_issue_key = "AYubetVdkWggubew9-IY"
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Create a Jira issue from a SonarQube issue key."
+    )
+    parser.add_argument(
+        "sonar_issue_key_positional",
+        nargs="?",
+        help="SonarQube issue key (UUID)",
+    )
+    parser.add_argument(
+        "--sonar_issue_key",
+        dest="sonar_issue_key_named",
+        help="SonarQube issue key (UUID)",
+    )
+    args = parser.parse_args()
+
+    sonar_issue_key = args.sonar_issue_key_named or args.sonar_issue_key_positional
+
+    if not sonar_issue_key:
+        parser.error(
+            "Please provide sonar_issue_key. Example: python script.py --sonar_issue_key <key>"
+        )
+
     create_issue_from_sonar(sonar_issue_key)
+
+
+if __name__ == "__main__":
+    main()

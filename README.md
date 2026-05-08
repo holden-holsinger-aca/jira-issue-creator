@@ -95,3 +95,47 @@ The system prevents duplicate ticket creation by checking the tracking CSV file 
 - Python 3.7+
 - openpyxl
 - requests
+
+## Dev Story Batch Creation
+
+Use `create_dev_stories.py` to create a set of similar dev stories that all link to the same epic.
+
+The script has built-in controller lists for both `te-findings-api` and `te-api`. It picks the correct default list from `--api-name` unless you override it with `--files-from`.
+
+The script includes the current legacy controller list by default and creates story summaries in this format:
+
+```text
+Update LegacyAuthorizationController in te-findings-api to v3
+```
+
+It also adds this default user-story style description:
+
+```text
+As a developer, I should update LegacyAuthorizationController in te-findings-api to v3 so that the legacy endpoint aligns with the current API contract and platform standards.
+```
+
+Run a preview first:
+
+```bash
+python create_dev_stories.py --epic-key GRW-123 --api-name te-findings-api --dry-run
+```
+
+Create the stories in Jira:
+
+```bash
+python create_dev_stories.py --epic-key GRW-123 --api-name te-findings-api
+```
+
+Create stories for the built-in `te-api` controller list:
+
+```bash
+python create_dev_stories.py --epic-key GRW-123 --api-name te-api
+```
+
+Optional overrides:
+
+- `--files-from controllers.txt` to supply a different file list
+- `--api-name te-api` to switch the generated ticket text to a different API or solution name
+- `--summary-template "Update {name} controller to v3"` to customize the summary
+- `--description-template "As a developer, I should update {controller} to v3 so that ..."` to customize the repeated description
+- `--issue-type-id 6` to change the Jira issue type id if needed
