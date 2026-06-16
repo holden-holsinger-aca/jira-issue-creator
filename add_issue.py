@@ -2,7 +2,6 @@ import requests
 import json
 import config
 
-
 # required fields (refer to the user story submit form to confirm the ones I add below):
 # Space, Work type, Summary,
 
@@ -13,7 +12,7 @@ import config
 # the payload as below needs to be updated to the required fields
 
 
-def add_issue(payload: dict, full_url: str) -> dict:
+def add_issue(payload: str, full_url: str) -> dict:
     response = requests.request(
         "POST",
         full_url,

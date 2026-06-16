@@ -2,11 +2,14 @@ import json
 import requests
 import urllib3
 import subprocess
+from typing import cast
 from urllib.parse import urlparse, parse_qs
-import re
 import sys
 
-from config import SONAR_AUTH, SONAR_BASE_URL, SONAR_HEADERS
+from add_issue import add_issue
+from config import BASE_URL, SONAR_AUTH, SONAR_BASE_URL, SONAR_HEADERS
+from get_current_sprint import get_current_sprint
+from sonar_tracking import get_existing_ticket, is_ticket_created, record_created_ticket
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -44,22 +47,6 @@ def parse_sonar_url(url: str) -> tuple[str, str]:
     return issue_key, project_id
 
 
-def extract_jira_id(issue_message: str) -> str:
-    """Extract JIRA ID from issue message.
-
-    Args:
-            issue_message: The issue message/description from SonarQube
-
-    Returns:
-            JIRA ID (e.g., "GRW-1234")
-    """
-    # Pattern matches JIRA-style IDs (e.g., GRW-1234, TE-567)
-    match = re.search(r"([A-Z]+\-\d+)", issue_message)
-    if match:
-        return match.group(1)
-    return None
-
-
 def get_sonar_issue(issue_key: str) -> dict:
     """Fetch a SonarQube issue via /api/issues/search.
 
@@ -90,6 +77,51 @@ def get_sonar_issue(issue_key: str) -> dict:
     return relevant_fields
 
 
+def ensure_jira_ticket(issue_key: str, project_id: str, issue_details: dict) -> str:
+    """Return the Jira ticket key for a Sonar issue, creating it when needed."""
+    if is_ticket_created(issue_key):
+        existing_ticket = get_existing_ticket(issue_key)
+        if existing_ticket:
+            return existing_ticket
+
+    issue_url = (
+        f"https://sonar.acaglobal.dev/project/issues?id={project_id}&open={issue_key}"
+    )
+    create_issue_url = f"{BASE_URL}/issue"
+    current_sprint = get_current_sprint()
+
+    sonar_jira_ticket_payload = json.dumps(
+        {
+            "fields": {
+                "issuetype": {"id": 3},
+                "project": {"key": "GRW"},
+                "summary": f"SonarQube {issue_details['issue']}",
+                "customfield_15377": {"value": "Review Workspace"},
+                "description": (
+                    f"An issue needs to be addressed on {issue_details['location']}. "
+                    f"Per SonarQube rule {issue_details['rule']}, SonarQube indicates {issue_details['issue']}. "
+                    f"The url to the SonarQube entry is {issue_url}"
+                ),
+                "customfield_10430": current_sprint,
+                "labels": ["roadmap"],
+            }
+        }
+    )
+
+    result = add_issue(
+        payload=cast(str, sonar_jira_ticket_payload),
+        full_url=cast(str, create_issue_url),
+    )
+    jira_key = result.get("key")
+    if not jira_key:
+        raise ValueError(
+            f"Jira ticket was not created successfully: {json.dumps(result)}"
+        )
+
+    record_created_ticket(issue_key, jira_key)
+    return jira_key
+
+
 def create_and_switch_branch(repo_path: str, branch_name: str) -> bool:
     """Create a new git branch and switch to it, bringing active changes along.
 
@@ -101,13 +133,6 @@ def create_and_switch_branch(repo_path: str, branch_name: str) -> bool:
             True if successful, False otherwise
     """
     try:
-        # Stash current changes
-        stash_result = subprocess.run(
-            ["git", "stash"], cwd=repo_path, capture_output=True, text=True, check=False
-        )
-        print(f"Stashed changes: {stash_result.stdout.strip()}")
-
-        # Create and switch to new branch
         branch_result = subprocess.run(
             ["git", "checkout", "-b", branch_name],
             cwd=repo_path,
@@ -116,16 +141,6 @@ def create_and_switch_branch(repo_path: str, branch_name: str) -> bool:
             check=True,
         )
         print(f"Created and switched to branch: {branch_result.stdout.strip()}")
-
-        # Apply stashed changes
-        apply_result = subprocess.run(
-            ["git", "stash", "pop"],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        print(f"Applied stashed changes: {apply_result.stdout.strip()}")
 
         return True
     except subprocess.CalledProcessError as e:
@@ -154,13 +169,8 @@ def process_sonar_url(sonar_url: str) -> dict:
         issue_details = get_sonar_issue(issue_key)
         print(f"Fetched issue details: {json.dumps(issue_details, indent=2)}")
 
-        # Extract JIRA ID from issue message
-        jira_id = extract_jira_id(issue_details.get("issue", ""))
-        if not jira_id:
-            raise ValueError(
-                f"Could not extract JIRA ID from issue: {issue_details.get('issue')}"
-            )
-        print(f"Extracted JIRA ID: {jira_id}")
+        jira_id = ensure_jira_ticket(issue_key, project_id, issue_details)
+        print(f"Resolved JIRA ID: {jira_id}")
 
         # Get repository path from project ID
         repo_path = PROJECT_REPO_MAP.get(project_id)
