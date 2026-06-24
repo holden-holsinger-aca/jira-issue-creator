@@ -2,11 +2,11 @@ import json
 import requests
 import urllib3
 import subprocess
+import argparse
 from typing import cast
 from urllib.parse import urlparse, parse_qs
-import sys
 
-from add_issue import add_issue
+from add_issue import add_issue, add_optional_fields
 from config import BASE_URL, SONAR_AUTH, SONAR_BASE_URL, SONAR_HEADERS
 from get_current_sprint import get_current_sprint
 from sonar_tracking import get_existing_ticket, is_ticket_created, record_created_ticket
@@ -77,7 +77,13 @@ def get_sonar_issue(issue_key: str) -> dict:
     return relevant_fields
 
 
-def ensure_jira_ticket(issue_key: str, project_id: str, issue_details: dict) -> str:
+def ensure_jira_ticket(
+    issue_key: str,
+    project_id: str,
+    issue_details: dict,
+    assignee_account_id: str | None = None,
+    labels: list[str] | None = None,
+) -> str:
     """Return the Jira ticket key for a Sonar issue, creating it when needed."""
     if is_ticket_created(issue_key):
         existing_ticket = get_existing_ticket(issue_key)
@@ -90,23 +96,27 @@ def ensure_jira_ticket(issue_key: str, project_id: str, issue_details: dict) -> 
     create_issue_url = f"{BASE_URL}/issue"
     current_sprint = get_current_sprint()
 
-    sonar_jira_ticket_payload = json.dumps(
-        {
-            "fields": {
-                "issuetype": {"id": 3},
-                "project": {"key": "GRW"},
-                "summary": f"SonarQube {issue_details['issue']}",
-                "customfield_15377": {"value": "Review Workspace"},
-                "description": (
-                    f"An issue needs to be addressed on {issue_details['location']}. "
-                    f"Per SonarQube rule {issue_details['rule']}, SonarQube indicates {issue_details['issue']}. "
-                    f"The url to the SonarQube entry is {issue_url}"
-                ),
-                "customfield_10430": current_sprint,
-                "labels": ["roadmap"],
-            }
-        }
+    fields = {
+        "issuetype": {"id": 3},
+        "project": {"key": "GRW"},
+        "summary": f"SonarQube {issue_details['issue']}",
+        "customfield_15377": {"value": "Review Workspace"},
+        "description": (
+            f"An issue needs to be addressed on {issue_details['location']}. "
+            f"Per SonarQube rule {issue_details['rule']}, SonarQube indicates {issue_details['issue']}. "
+            f"The url to the SonarQube entry is {issue_url}"
+        ),
+        "customfield_10430": current_sprint,
+        "labels": ["ProdSupport"],
+    }
+
+    add_optional_fields(
+        fields=fields,
+        assignee_account_id=assignee_account_id,
+        labels=labels,
     )
+
+    sonar_jira_ticket_payload = json.dumps({"fields": fields})
 
     result = add_issue(
         payload=cast(str, sonar_jira_ticket_payload),
@@ -151,7 +161,11 @@ def create_and_switch_branch(repo_path: str, branch_name: str) -> bool:
         return False
 
 
-def process_sonar_url(sonar_url: str) -> dict:
+def process_sonar_url(
+    sonar_url: str,
+    assignee_account_id: str | None = None,
+    labels: list[str] | None = None,
+) -> dict:
     """Process a SonarQube URL to create a git branch and fetch issue details.
 
     Args:
@@ -169,7 +183,13 @@ def process_sonar_url(sonar_url: str) -> dict:
         issue_details = get_sonar_issue(issue_key)
         print(f"Fetched issue details: {json.dumps(issue_details, indent=2)}")
 
-        jira_id = ensure_jira_ticket(issue_key, project_id, issue_details)
+        jira_id = ensure_jira_ticket(
+            issue_key,
+            project_id,
+            issue_details,
+            assignee_account_id=assignee_account_id,
+            labels=labels,
+        )
         print(f"Resolved JIRA ID: {jira_id}")
 
         # Get repository path from project ID
@@ -199,13 +219,34 @@ def process_sonar_url(sonar_url: str) -> dict:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        # URL provided as argument
-        sonar_url = sys.argv[1]
-        result = process_sonar_url(sonar_url)
+    parser = argparse.ArgumentParser(
+        description="Create/reuse Jira ticket from a Sonar issue URL and create a branch."
+    )
+    parser.add_argument(
+        "sonar_url",
+        nargs="?",
+        help="Sonar issues URL containing open=<issue-key>&id=<project-id>",
+    )
+    parser.add_argument(
+        "--assignee-account-id",
+        help="Optional Jira accountId for issue assignment when creating a ticket.",
+    )
+    parser.add_argument(
+        "--label",
+        action="append",
+        default=None,
+        help="Optional Jira label to add when creating a ticket. Repeat for multiple. If omitted, config defaults are used.",
+    )
+    args = parser.parse_args()
+
+    if args.sonar_url:
+        result = process_sonar_url(
+            args.sonar_url,
+            assignee_account_id=args.assignee_account_id,
+            labels=args.label,
+        )
         print(json.dumps(result, indent=2))
-        sys.exit(0 if result.get("success") else 1)
-    else:
-        # Example with a test issue key
-        result = get_sonar_issue("AYubfL6kkWggubew-Kpv")
-        print(json.dumps(result, sort_keys=True, indent=2))
+        raise SystemExit(0 if result.get("success") else 1)
+
+    result = get_sonar_issue("AYubfL6kkWggubew-Kpv")
+    print(json.dumps(result, sort_keys=True, indent=2))

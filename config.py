@@ -1,7 +1,6 @@
 import os
 from requests.auth import HTTPBasicAuth
 
-
 # API Configuration
 BASE_URL = "https://acaalpha.atlassian.net/rest/api/2"
 EMAIL = "holden.holsinger@acaglobal.com"
@@ -12,6 +11,11 @@ AUTH = HTTPBasicAuth("holden.holsinger@acaglobal.com", API_KEY)
 
 # Headers
 HEADERS = {"Accept": "application/json", "Content-Type": "application/json"}
+
+# Default Jira values for created tickets.
+# Set accountId from Jira user profile. Leave blank to skip assignment.
+DEFAULT_ASSIGNEE_ACCOUNT_ID = "712020:dca60159-0102-45e2-b41e-9417176ddd49"
+DEFAULT_JIRA_LABELS = ["ProdSupport"]
 
 # Common endpoints
 ENDPOINTS = {

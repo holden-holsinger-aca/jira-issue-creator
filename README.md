@@ -17,6 +17,11 @@ A Python script to bulk create Jira issues from Excel spreadsheets, including su
 4. Set environment variable for Jira token: `set jira_token=YOUR_API_TOKEN` (Windows)
 5. Update `config.py` with your Jira instance details
 
+Set hard-coded defaults in `config.py` if you always want assignment/labels at creation time:
+
+- `DEFAULT_ASSIGNEE_ACCOUNT_ID = "<jiraAccountId>"`
+- `DEFAULT_JIRA_LABELS = ["ProdSupport", "your-label"]`
+
 ## Usage
 
 1. Prepare an Excel file `tickets_to_create.xlsx` with columns:
@@ -126,6 +131,12 @@ Create the stories in Jira:
 python create_dev_stories.py --epic-key GRW-123 --api-name te-findings-api
 ```
 
+Create stories and assign/label them at creation time:
+
+```bash
+python create_dev_stories.py --epic-key GRW-123 --api-name te-findings-api --assignee-account-id 5b10a2844c20165700ede21g --label ProdSupport --label tech-debt
+```
+
 Create stories for the built-in `te-api` controller list:
 
 ```bash
@@ -139,3 +150,13 @@ Optional overrides:
 - `--summary-template "Update {name} controller to v3"` to customize the summary
 - `--description-template "As a developer, I should update {controller} to v3 so that ..."` to customize the repeated description
 - `--issue-type-id 6` to change the Jira issue type id if needed
+- `--assignee-account-id <jiraAccountId>` to assign each created issue during creation
+- `--label <name>` to add a label (repeat for multiple labels)
+
+## Sonar URL Flow Options
+
+You can also assign/label the Jira issue when using `get_sonar_issue.py`:
+
+```bash
+python get_sonar_issue.py "https://sonar.acaglobal.dev/project/issues?open=<sonarIssueKey>&id=<projectId>" --assignee-account-id <jiraAccountId> --label ProdSupport --label sonar
+```

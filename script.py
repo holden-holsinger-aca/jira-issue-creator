@@ -1,5 +1,5 @@
 from excel import extract_excel_info
-from add_issue import add_issue
+from add_issue import add_issue, add_optional_fields
 import json
 import argparse
 from config import BASE_URL
@@ -64,7 +64,11 @@ def create_issues_from_excel():
         add_issue(payload=child_payload, full_url=create_issue_url)
 
 
-def create_issue_from_sonar(issue_id: str):
+def create_issue_from_sonar(
+    issue_id: str,
+    assignee_account_id: str | None = None,
+    labels: list[str] | None = None,
+):
     # Check if ticket already exists
     if is_ticket_created(issue_id):
         existing_ticket = get_existing_ticket(issue_id)
@@ -78,23 +82,27 @@ def create_issue_from_sonar(issue_id: str):
 
     current_sprint = get_current_sprint()
 
-    sonar_jira_ticket_payload = json.dumps(
-        {
-            "fields": {
-                "issuetype": {"id": 3},
-                "project": {"key": "GRW"},
-                "summary": f"SonarQube {sonar_issue['issue']}",
-                "customfield_15377": {"value": "Review Workspace"},
-                "description": (
-                    f"An issue needs to be addressed on {sonar_issue['location']}. "
-                    f"Per SonarQube rule {sonar_issue['rule']}, SonarQube indicates {sonar_issue['issue']}. The url to the SonarQube entry is {issue_url}"
-                ),
-                # id of current sprint
-                "customfield_10430": current_sprint,
-                "labels": ["roadmap"],
-            }
-        }
+    fields = {
+        "issuetype": {"id": 3},
+        "project": {"key": "GRW"},
+        "summary": f"SonarQube {sonar_issue['issue']}",
+        "customfield_15377": {"value": "Review Workspace"},
+        "description": (
+            f"An issue needs to be addressed on {sonar_issue['location']}. "
+            f"Per SonarQube rule {sonar_issue['rule']}, SonarQube indicates {sonar_issue['issue']}. The url to the SonarQube entry is {issue_url}"
+        ),
+        # id of current sprint
+        "customfield_10430": current_sprint,
+        "labels": ["ProdSupport"],
+    }
+
+    add_optional_fields(
+        fields=fields,
+        assignee_account_id=assignee_account_id,
+        labels=labels,
     )
+
+    sonar_jira_ticket_payload = json.dumps({"fields": fields})
 
     result = add_issue(payload=sonar_jira_ticket_payload, full_url=create_issue_url)
     jira_key = result.get("key")
@@ -124,6 +132,16 @@ def main():
         dest="sonar_issue_key_named",
         help="SonarQube issue key (UUID)",
     )
+    parser.add_argument(
+        "--assignee-account-id",
+        help="Optional Jira accountId for issue assignment when creating a ticket.",
+    )
+    parser.add_argument(
+        "--label",
+        action="append",
+        default=None,
+        help="Optional Jira label to add when creating a ticket. Repeat for multiple. If omitted, config defaults are used.",
+    )
     args = parser.parse_args()
 
     sonar_issue_key = args.sonar_issue_key_named or args.sonar_issue_key_positional
@@ -133,7 +151,11 @@ def main():
             "Please provide sonar_issue_key. Example: python script.py --sonar_issue_key <key>"
         )
 
-    create_issue_from_sonar(sonar_issue_key)
+    create_issue_from_sonar(
+        sonar_issue_key,
+        assignee_account_id=args.assignee_account_id,
+        labels=args.label,
+    )
 
 
 if __name__ == "__main__":

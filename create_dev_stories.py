@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path
 
-from add_issue import add_issue
+from add_issue import add_issue, add_optional_fields
 from config import BASE_URL
 
 DEFAULT_PROJECT_KEY = "GRW"
@@ -118,6 +118,16 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print the generated stories without creating Jira issues.",
     )
+    parser.add_argument(
+        "--assignee-account-id",
+        help="Optional Jira accountId to assign each created issue to.",
+    )
+    parser.add_argument(
+        "--label",
+        action="append",
+        default=None,
+        help="Optional label to add. Repeat for multiple. If omitted, config defaults are used.",
+    )
     return parser.parse_args()
 
 
@@ -153,6 +163,8 @@ def build_payload(
     issue_type_id: int,
     summary: str,
     description: str | None,
+    assignee_account_id: str | None = None,
+    labels: list[str] | None = None,
 ) -> str:
     fields = {
         "issuetype": {"id": str(issue_type_id)},
@@ -164,6 +176,12 @@ def build_payload(
 
     if description:
         fields["description"] = description
+
+    add_optional_fields(
+        fields=fields,
+        assignee_account_id=assignee_account_id,
+        labels=labels,
+    )
 
     return json.dumps({"fields": fields})
 
@@ -183,6 +201,8 @@ def main() -> None:
             issue_type_id=args.issue_type_id,
             summary=summary,
             description=description,
+            assignee_account_id=args.assignee_account_id,
+            labels=args.label,
         )
 
         if args.dry_run:

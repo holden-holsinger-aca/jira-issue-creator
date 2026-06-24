@@ -12,6 +12,30 @@ import config
 # the payload as below needs to be updated to the required fields
 
 
+def add_optional_fields(
+    fields: dict,
+    assignee_account_id: str | None = None,
+    labels: list[str] | None = None,
+) -> None:
+    effective_assignee = (
+        assignee_account_id
+        if assignee_account_id is not None
+        else config.DEFAULT_ASSIGNEE_ACCOUNT_ID
+    )
+    if effective_assignee:
+        fields["assignee"] = {"accountId": effective_assignee}
+
+    effective_labels = labels if labels is not None else config.DEFAULT_JIRA_LABELS
+    if effective_labels is None:
+        return
+
+    existing_labels = fields.get("labels")
+    if isinstance(existing_labels, list):
+        fields["labels"] = list(dict.fromkeys(existing_labels + effective_labels))
+    else:
+        fields["labels"] = list(dict.fromkeys(effective_labels))
+
+
 def add_issue(payload: str, full_url: str) -> dict:
     response = requests.request(
         "POST",
