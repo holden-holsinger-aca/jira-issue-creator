@@ -143,6 +143,24 @@ def create_and_switch_branch(repo_path: str, branch_name: str) -> bool:
             True if successful, False otherwise
     """
     try:
+        subprocess.run(
+            ["git", "checkout", "integration"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        print("Switched to integration")
+
+        subprocess.run(
+            ["git", "pull", "origin", "integration"],
+            cwd=repo_path,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        print("Pulled latest from integration")
+
         branch_result = subprocess.run(
             ["git", "checkout", "-b", branch_name],
             cwd=repo_path,
